@@ -48,10 +48,19 @@ export async function setupVite(app: Express, server: Server) {
 }
 
 export function serveStatic(app: Express) {
-  const distPath =
+  let distPath =
     process.env.NODE_ENV === "development"
       ? path.resolve(import.meta.dirname, "../..", "dist", "public")
       : path.resolve(import.meta.dirname, "public");
+
+  // Vercel (and similar Node hosting) places the client build at
+  // <bundle-dir>/public next to the compiled server bundle, so prefer it when present.
+  if (process.env.NODE_ENV !== "development") {
+    const bundlePublic = path.resolve(import.meta.dirname, "public");
+    if (fs.existsSync(bundlePublic)) {
+      distPath = bundlePublic;
+    }
+  }
   if (!fs.existsSync(distPath)) {
     console.error(
       `Could not find the build directory: ${distPath}, make sure to build the client first`
